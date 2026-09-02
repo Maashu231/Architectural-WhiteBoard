@@ -1,98 +1,153 @@
-<h1 align="center">
-  Architectural Whiteboard
-</h1>
+# Arch Whiteboard
 
-<p align="center">
-  <strong>An AI-powered, real-time collaborative cloud architecture designer.</strong>
-</p>
+**Arch Whiteboard** is a collaborative, real-time cloud architecture design tool. It combines an infinite canvas for system design with multiplayer capabilities (live cursors and real-time syncing) and an **AI Co-Architect** that can generate, analyze, and export complex cloud infrastructures from natural language.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js" />
-  <img src="https://img.shields.io/badge/React_Flow-11-ff007f?style=flat-square&logo=react" alt="React Flow" />
-  <img src="https://img.shields.io/badge/Socket.IO-4.8-black?style=flat-square&logo=socket.io" alt="Socket.io" />
-  <img src="https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript" alt="TypeScript" />
-</p>
+> **Status:** Completed, ready for deployment. Not yet deployed.
 
-## Overview
+---
 
-Architectural Whiteboard is a modern, enterprise-grade web application designed for Cloud Architects, DevOps Engineers, and Software Developers. It allows teams to visually design cloud infrastructure on an interactive canvas, collaborate in real-time, generate architectures using Natural Language Processing (NLP), and export diagrams directly into Infrastructure as Code (IaC) templates.
+## 🌟 Key Features
 
-## ✨ Features
+- **Real-Time Multiplayer:** Instant collaboration with live cursors and synchronized node/edge states powered by a custom Socket.io server.
+- **AI Co-Architect:**
+  - **Generate:** Describe an architecture (e.g., "serverless e-commerce backend") and watch the AI build the nodes and connections on your canvas.
+  - **Analyze:** AI audits your current design for single points of failure, security vulnerabilities, performance bottlenecks, and cost optimizations.
+  - **Export:** Translate your visual architecture into infrastructure-as-code (Terraform, Docker Compose) or Mermaid.js.
+- **Interactive Canvas:** Built on React Flow with an immersive, glassmorphic dark theme and smooth physics-based animations (Framer Motion).
+- **Authentication:** Secure Google OAuth integration managed by Supabase.
+- **Cloud Storage:** Save and load diagrams seamlessly via Supabase PostgreSQL.
 
-- **Real-Time Collaboration**: Built with `Socket.IO`, multiple users can join a room and edit the architecture concurrently. You can see other users' cursors moving in real-time.
-- **AI Architecture Generation**: Describe your desired system (e.g., *"E-commerce backend with Kafka, Redis, PostgreSQL, and an API Gateway"*) and the AI will auto-generate the components and connections on the canvas.
-- **AI Security & Cost Audit**: Click the "AI Analyze" button to receive an instant audit of your architecture. The system detects Single Points of Failure (SPOFs), security vulnerabilities (like unencrypted HTTP or exposed databases), performance bottlenecks, and provides a monthly AWS cost estimate.
-- **Infrastructure as Code (IaC) Export**: One-click export of your visual diagram into:
-  - **Terraform (`.tf`)**
-  - **Docker Compose (`.yml`)**
-  - **Mermaid.js Diagrams**
-- **Modern Glassmorphic UI**: Beautiful, dark-themed UI built with React Flow, customized with dynamic node rendering, status LEDs, and animated HTTPS/gRPC data flows.
+---
 
-## 🏗️ Architecture
+## 🏗️ Architecture & Tech Stack
 
-```mermaid
-graph TD
-    Client[Web Browser Client] -->|HTTP / REST| NextAPI[Next.js App Router APIs]
-    Client -->|WebSocket| SocketServer[Node.js / Socket.IO Server]
-    
-    subgraph "Next.js Full-Stack"
-        NextAPI -->|/api/generate| AIEngine[Prompt-to-Node Generator]
-        NextAPI -->|/api/analyze| AuditEngine[Security/Cost Auditor]
-        NextAPI -->|/api/export| IaCEngine[Terraform / Docker Exporter]
-    end
-    
-    subgraph "Collaboration Engine"
-        SocketServer -->|Broadcasts| RoomState[Room State Sync]
-    end
-```
+Arch Whiteboard is built on a modern, decoupled architecture:
 
-## 🚀 Getting Started
+- **Frontend Application:** Next.js (App Router) serving the React UI. Handles rendering the canvas, modals, AI integrations (via Next.js API Routes), and Supabase Auth.
+- **Real-time Server:** A standalone Node.js/Express server running Socket.io for managing WebSocket connections, room states, and high-frequency events (cursors).
+- **Database & Auth:** Supabase (PostgreSQL) for user authentication and persisting diagram states.
+- **AI Layer:** Groq (LLaMA) via the Vercel AI SDK for high-speed architecture generation and analysis.
+- **State Management (Optional):** Redis is supported on the socket server for multi-instance scaling and rate-limiting.
 
-This project is configured as a zero-config, out-of-the-box local environment.
+### Tech Stack Versions
+- **Framework:** Next.js `16.2.12` (React `19.2.4`)
+- **Canvas:** React Flow `^11.11.4`
+- **Styling & Animations:** Tailwind CSS `^4.0`, Framer Motion `^13.2.0`, Lucide React
+- **WebSockets:** Socket.io `^4.8.3`
+- **Database/Auth:** Supabase JS `^2.111.0`, Supabase SSR `^0.12.4`
+- **AI SDK:** `ai ^7.0.56`, `@ai-sdk/openai`, `@ai-sdk/google`
+- **Validation:** Zod `^4.4.3`
 
-### Prerequisites
+---
 
-- Node.js (v18 or higher)
-- npm or yarn
-- Redis (optional for local dev — rooms fall back to in-memory state)
+## 📋 Prerequisites
 
-### Installation
+Before setting up the project, ensure you have the following installed and configured:
 
-1. Clone the repository:
+1. **Node.js** (v20+ recommended)
+2. **Supabase Account:** Create a new project for Auth and database storage.
+   - Enable **Google OAuth** in the Supabase Auth providers.
+3. **Groq API Key:** For the AI Co-Architect features (alternatively, Google Gemini).
+4. **Redis (Optional):** If running in a multi-instance production environment.
+
+---
+
+## 🚀 Installation & Setup
+
+1. **Clone the repository and install dependencies:**
    ```bash
-   git clone https://github.com/yourusername/architectural-whiteboard.git
-   cd architectural-whiteboard
-   ```
-
-2. Install dependencies:
-   ```bash
+   git clone <repository-url>
+   cd arch-whiteboard
    npm install
    ```
 
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env.local
-   # Edit .env.local with your Supabase and AI provider keys
-   ```
+2. **Database Setup (Supabase):**
+   - Run the provided `supabase-setup.sql` file in your Supabase SQL Editor. This will create the required `diagrams` table and set up Row Level Security (RLS) policies.
 
-4. Start the development server (This uses `concurrently` to boot both Next.js and the Socket.IO server automatically):
-   ```bash
-   npm run dev
-   ```
+3. **Environment Variables:**
+   - Copy the example environment file:
+     ```bash
+     cp .env.example .env.local
+     ```
+   - Fill in your `.env.local` file with your actual keys (never commit this file):
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+| Variable | Description | Required? |
+|----------|-------------|-----------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous API key | Yes |
+| `GROQ_API_KEY` | Your Groq API key for AI features | Yes* |
+| `GROQ_MODEL` | Default: `openai/gpt-oss-20b` | No |
+| `NEXT_PUBLIC_SOCKET_URL` | URL for the WebSocket server (default: `http://localhost:4002`) | Yes |
+| `PORT` | Port for the Socket.io server to listen on (default: `4002`) | Yes |
+| `ALLOWED_ORIGINS` | CORS origins for the Socket server (default: `http://localhost:3000`) | Yes |
 
-## 🛠️ Tech Stack
+*\*Note: You can use `GOOGLE_GENERATIVE_AI_API_KEY` as an alternative to Groq.*
 
-- **Frontend**: Next.js 16 (App Router), React, React Flow (for canvas rendering), Vanilla CSS (Glassmorphism), Lucide React (Icons).
-- **Backend (API)**: Next.js Route Handlers (`/api/...`) for stateless processing, AI generation, and IaC conversion.
-- **Backend (Real-time)**: Express.js + Socket.IO (running on port 4002) for low-latency WebSocket cursor tracking and state synchronization.
+---
 
-## 🤝 Contributing
+## 💻 Running Locally
 
-Contributions, issues, and feature requests are welcome!
-Feel free to check the [issues page](https://github.com/yourusername/architectural-whiteboard/issues).
+To run the application in development mode, start the Next.js app and the Socket.io server simultaneously. 
 
-## 📝 License
+Run the following command in the root directory:
+```bash
+npm run dev
+```
+*(This uses `concurrently` to run both `next dev` on port 3000 and `node server.js` on port 4002).*
 
-This project is [MIT](https://opensource.org/licenses/MIT) licensed.
+- **Web App:** [http://localhost:3000](http://localhost:3000)
+- **Socket Server:** [http://localhost:4002](http://localhost:4002)
+
+---
+
+## 📁 Project Structure
+
+```text
+arch-whiteboard/
+├── app/
+│   ├── api/            # Next.js API Routes (AI Generate, Analyze, Export)
+│   ├── auth/           # Supabase Auth callbacks
+│   ├── components/     # React components (Canvas, Modals, Sidebar)
+│   ├── lib/            # Utilities (AI, Env validation, Rate Limiting, Supabase)
+│   └── globals.css     # Tailwind v4 configuration and design system
+├── public/             # Static assets
+├── test/               # Unit and integration tests
+├── .env.example        # Environment variable template
+├── next.config.ts      # Next.js configuration and CSP policies
+├── package.json        # Dependencies and scripts
+├── server.js           # Custom Socket.io Node.js server
+└── supabase-setup.sql  # Database schema and RLS policies
+```
+
+---
+
+## 📖 Usage
+
+- **Joining a Room:** Upon logging in, you are placed in a default collaborative room. You can share your screen with others.
+- **Designing:** Drag and drop infrastructure nodes (Edge, Gateway, Compute, Database, etc.) from the left sidebar onto the canvas. Connect them by dragging from a node's handle to another.
+- **AI Generation:** Click the **Sparkle (AI)** icon in the toolbar, describe your desired system, and watch the AI build it instantly.
+- **Analyzing:** Click the **Shield** icon to receive a security, performance, and cost audit of your current canvas.
+- **Exporting:** Click the **Download** icon to export your visual diagram as raw Terraform code or a Docker Compose file.
+
+---
+
+## 🚢 Deployment (Not Yet Deployed)
+
+When you are ready to deploy Arch Whiteboard, keep in mind that the application consists of **two** separate processes that must be hosted:
+
+1. **The Next.js Application:**
+   - Best deployed on a platform optimized for Next.js like **Vercel** or **AWS Amplify**.
+   - Build command: `npm run build`
+   - Ensure all `NEXT_PUBLIC_*`, Supabase, and AI API keys are set in the platform's environment variables.
+
+2. **The Socket.io Server (`server.js`):**
+   - Must be deployed to a stateful/long-running environment like **Render**, **Railway**, **Heroku**, or an **AWS EC2/ECS** instance. Serverless environments (like Vercel functions) cannot host persistent WebSockets.
+   - Start command: `npm run server`
+   - Ensure `ALLOWED_ORIGINS` is set to your production Next.js domain.
+   - **Important:** If running multiple instances of the Socket server in production, you *must* configure `REDIS_HOST`, `REDIS_PORT`, and `REDIS_PASSWORD` to enable the Socket.io Redis Adapter and share state/rate-limits across instances.
+
+---
+
+## 📄 License
+
+This project is proprietary and confidential. Unauthorized copying, distribution, or modification of this software is strictly prohibited.
