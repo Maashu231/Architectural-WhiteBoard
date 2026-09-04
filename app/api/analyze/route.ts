@@ -3,50 +3,35 @@ import { generateText } from 'ai';
 import { z } from 'zod';
 import { checkRateLimit, getClientIP } from '../../lib/rateLimiter';
 import { getAIModel, hasAIProvider } from '../../lib/ai';
-import { createClient } from '../../lib/supabase/server';
-import { MAX_NODES, MAX_EDGES } from '../../lib/schemas';
+import { sanitizePromptInput } from '../../lib/sanitizer';
 
-// ── Request body schema ───────────────────────────────────────────────────────
-// We only need id, type, data.label, and source/target for the prompt — we don't
-// re-persist the diagram, so a loose schema is acceptable here.
-const nodeShape = z.object({
-  id: z.string().max(100),
-  type: z.string().max(50).optional(),
-  data: z
-    .object({
-      label: z.string().max(200).optional(),
-    })
-    .passthrough()
-    .optional(),
-});
+// Input validation schemas
+const nodeSchema = z.object({
+  id: z.string(),
+  type: z.string().optional(),
+  data: z.object({
+    label: z.string().optional(),
+  }).passthrough().optional(),
+}).passthrough();
 
-const edgeShape = z.object({
-  id: z.string().max(100),
-  source: z.string().max(100),
-  target: z.string().max(100),
-  data: z
-    .object({
-      protocol: z.string().max(50).optional(),
-    })
-    .passthrough()
-    .optional(),
-});
+const edgeSchema = z.object({
+  id: z.string().optional(),
+  source: z.string(),
+  target: z.string(),
+  data: z.object({
+    protocol: z.string().optional(),
+  }).passthrough().optional(),
+}).passthrough();
 
 const requestSchema = z.object({
-  nodes: z.array(nodeShape).max(MAX_NODES, `Cannot analyze more than ${MAX_NODES} nodes`),
-  edges: z.array(edgeShape).max(MAX_EDGES, `Cannot analyze more than ${MAX_EDGES} edges`),
+  nodes: z.array(nodeSchema),
+  edges: z.array(edgeSchema),
 });
 
 export async function POST(req: Request) {
-  // ── Rate limiting ──
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const userId = user?.id || 'anon';
-
+  // Rate limiting
   const clientIP = getClientIP(req);
-  const rateLimitResult = await checkRateLimit(clientIP, `analyze:${userId}`, false);
+  const rateLimitResult = await checkRateLimit(clientIP, 'analyze');
 
   if (!rateLimitResult.allowed) {
     return NextResponse.json(
@@ -66,7 +51,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate shape and enforce size limits in one step.
+    // Validate shape and enforce structure
     const parseResult = requestSchema.safeParse(body);
     if (!parseResult.success) {
       const message = parseResult.error.issues[0]?.message ?? 'Invalid request body';
@@ -75,7 +60,7 @@ export async function POST(req: Request) {
 
     const { nodes, edges } = parseResult.data;
 
-    // Ensure the key exists
+    // Ensure AI service is configured
     if (!hasAIProvider()) {
       return NextResponse.json(
         { error: 'AI service is not configured' },
@@ -83,14 +68,23 @@ export async function POST(req: Request) {
       );
     }
 
-    const architectureSummary = nodes
-      .map((n) => `- ${n.data?.label || 'Unknown'} (${n.type || 'unknown'})`)
+    // Sanitize node labels to prevent prompt injection
+    const sanitizedNodes = nodes.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        label: sanitizePromptInput(node.data?.label ?? ''),
+      },
+    }));
+
+    const architectureSummary = sanitizedNodes
+      .map((n) => `- ${n.data.label || 'Unknown'} (${n.type || 'unknown'})`)
       .join('\n');
 
     const connectionsSummary = edges
       .map((e) => {
-        const source = nodes.find((n) => n.id === e.source)?.data?.label || e.source;
-        const target = nodes.find((n) => n.id === e.target)?.data?.label || e.target;
+        const source = sanitizedNodes.find((n) => n.id === e.source)?.data?.label || e.source;
+        const target = sanitizedNodes.find((n) => n.id === e.target)?.data?.label || e.target;
         return `- ${source} -> [${e.data?.protocol || 'HTTP'}] -> ${target}`;
       })
       .join('\n');
@@ -116,7 +110,7 @@ export async function POST(req: Request) {
     const { text } = await generateText({
       model: getAIModel(),
       prompt,
-      abortSignal: AbortSignal.timeout(30000), // 30 s timeout
+      abortSignal: AbortSignal.timeout(30000), // 30s timeout
     });
 
     return NextResponse.json(
