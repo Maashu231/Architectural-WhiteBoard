@@ -1,90 +1,139 @@
-<h1 align="center">
-  Architectural Whiteboard
-</h1>
+# Architectural Whiteboard
 
-<p align="center">
-  <strong>An AI-powered, real-time collaborative cloud architecture designer.</strong>
-</p>
+> Production-grade, real-time collaborative cloud topology designer powered by React Flow, Socket.IO, and structured LLM code generation.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js" />
-  <img src="https://img.shields.io/badge/React_Flow-11-ff007f?style=flat-square&logo=react" alt="React Flow" />
-  <img src="https://img.shields.io/badge/Socket.IO-4.8-black?style=flat-square&logo=socket.io" alt="Socket.io" />
-  <img src="https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
-</p>
-
-## Overview
-
-**Architectural Whiteboard** is a modern, enterprise-grade web application designed for Cloud Architects, DevOps Engineers, and Software Developers. It allows teams to visually design cloud infrastructure on an interactive canvas, collaborate in real-time, generate architectures using Natural Language Processing (NLP), and export diagrams directly into Infrastructure as Code (IaC) templates.
+[![Next.js](https://img.shields.io/badge/Next.js-16_App_Router-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React Flow](https://img.shields.io/badge/React_Flow-v11-ff007f?style=flat-square&logo=react)](https://reactflow.dev/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-v4.8-010101?style=flat-square&logo=socket.io)](https://socket.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
 ---
 
-## ✨ Features
+## 📌 System Capabilities
 
-- **⚡ Real-Time Collaboration**: Powered by `Socket.IO`, multiple users can join a room and edit architecture concurrently with real-time cursor tracking and dynamic state sync.
-- **🤖 AI Architecture Generation**: Describe your desired system (e.g., *"E-commerce backend with Kafka, Redis, PostgreSQL, and an API Gateway"*) and AI auto-generates structured components, relationships, and layout positioning on the canvas.
-- **🛡️ AI Security & Cost Audit**: Instant, one-click automated architecture analysis to detect Single Points of Failure (SPOFs), unencrypted connections, exposed databases, and monthly AWS cost estimates.
-- **📄 Infrastructure as Code (IaC) Export**: One-click export of visual diagrams into:
-  - **Terraform (`.tf`)**
-  - **Docker Compose (`.yml`)**
-  - **Mermaid.js Diagrams**
-- **🎨 Glassmorphic Dark UI**: High-performance rendering powered by React Flow, equipped with customized dynamic node states, status LEDs, custom node creators, and animated protocol data flow indicators (HTTPS, gRPC, DB links).
+- **Real-Time Collaborative Canvas**: Low-latency multi-user diagram editing with dynamic state synchronization and pointer tracking over WebSockets.
+- **LLM-Driven Graph Synthesis**: Generates structured, auto-tiered system topology nodes and directional connection edges from natural language prompts using Vercel AI SDK and Zod schema validation.
+- **Automated Infrastructure Auditing**: Performs static analysis on canvas state to highlight Single Points of Failure (SPOFs), unencrypted transport boundaries, public database exposures, and monthly AWS cost projections.
+- **Multi-Target IaC Compilation**: Compiles visual visual graphs directly into deployable primitives:
+  - **HashiCorp Terraform** (`.tf`)
+  - **Docker Compose** (`docker-compose.yml`)
+  - **Mermaid.js** (`.mmd`)
 
 ---
 
-## 🏗️ Architecture
+## 🏗 System Architecture & Data Flow
 
-```mermaid
-graph TD
-    Client[Web Browser Client] -->|HTTP / REST| NextAPI[Next.js App Router APIs]
-    Client -->|WebSocket Port 4002| SocketServer[Node.js / Socket.IO Server]
-    
-    subgraph "Next.js Full-Stack"
-        NextAPI -->|/api/generate| AIEngine[Prompt-to-Node Generator]
-        NextAPI -->|/api/analyze| AuditEngine[Security/Cost Auditor]
-        NextAPI -->|/api/export| IaCEngine[Terraform / Docker Exporter]
-    end
-    
-    subgraph "Collaboration Engine"
-        SocketServer -->|Broadcasts| RoomState[Room State Sync & Cursors]
-    end
-🛠️ Tech Stack
-Frontend: Next.js 16 (App Router), React, React Flow (Canvas Rendering), Lucide React Icons, Tailwind CSS / Glassmorphism.
-Backend (API): Next.js Route Handlers (/api/...) for stateless prompt processing, AI schema generation, and IaC conversion.
-Backend (Real-Time): Express.js + Socket.IO (running on port 4002) for low-latency WebSocket tracking and room state synchronization.
-AI Integration: Vercel AI SDK (generateObject, generateText) with Zod schema enforcement and automated graph auto-tier layout algorithms.
-🚀 Getting Started
-This project is configured as a zero-config, out-of-the-box local environment.
+The platform uses a split architecture separating stateless API/AI request processing from persistent WebSocket room orchestration.
 
-Prerequisites
-Node.js: v18 or higher
-npm or yarn
-Redis (Optional for local dev — rooms automatically fall back to in-memory state)
-Installation & Local Setup
-Clone the repository:
+              ┌──────────────────────────────────────────────┐
+              │              Web Browser Client              │
+              └──────────────┬────────────────────┬──────────┘
+                             │                    │
+              HTTP / REST    │                    │ WebSockets (Port 4002)
+         (Next.js Serverless)│                    │ (Express + Socket.IO)
+                             ▼                    ▼
+┌─────────────────────────────────────────┐ ┌───────────────────────────────────┐ │ Next.js Route Handlers │ │ Socket.IO Gateway Server │ ├─────────────────────────────────────────┤ ├───────────────────────────────────┤ │ • /api/generate - AI Graph Generator │ │ • Room State & Cursors Broadcast │ │ • /api/analyze - Security/Cost Engine │ │ • In-Memory Delta Sync │ │ • /api/export - IaC Compiler │ │ • Optional Redis Pub/Sub Adapter │ └────────────────────┬────────────────────┘ └───────────────────────────────────┘ │ ▼ ┌─────────────────────────┐ │ Vercel AI SDK Engine │ │ (OpenAI / Gemini) │ └─────────────────────────┘
+
+
+---
+
+## 🛠 Tech Stack & Dependencies
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend Framework** | Next.js 16 (App Router), React 19, TypeScript |
+| **Canvas Engine** | React Flow (`reactflow`), Framer Motion, Lucide Icons |
+| **Styling** | Tailwind CSS v4, Glassmorphism design primitives |
+| **Real-Time Transport**| Node.js, Express 5, Socket.IO 4.8 |
+| **AI / Schema Engine** | Vercel AI SDK (`generateObject`, `generateText`), Zod |
+| **Persistence / Cache** | Supabase, Redis (`ioredis` fallback to memory) |
+
+---
+
+## 🚀 Environment & Getting Started
+
+### Prerequisites
+
+- **Node.js**: `>= 18.0.0`
+- **npm**: `>= 9.0.0` (or `pnpm` / `yarn`)
+- **Redis** *(Optional)*: Required only if scaling socket server nodes horizontally.
+
+### Environment Configuration
+
+Create a `.env.local` file in the project root:
+
+```ini
+# App Configuration
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_SOCKET_URL="http://localhost:4002"
+
+# AI Provider Keys
+OPENAI_API_KEY="sk-..."
+GOOGLE_GENERATIVE_AI_API_KEY="AIzaSy..."
+
+# Database & Auth (Optional for Auth / Persisted Diagrams)
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+
+# Redis Cache (Optional - Falls back to In-Memory Map)
+REDIS_URL="redis://localhost:6379"
+💻 Installation & Local Running
+Clone & Install Dependencies
 
 git clone https://github.com/Maashu231/Architectural-WhiteBoard.git
 cd Architectural-WhiteBoard
-Install dependencies:
-
 npm install
-Configure environment variables:
+Start Dev Server (Next.js + Socket Server)
 
-cp .env.example .env.local
-Edit .env.local to provide your OpenAI/Vercel AI keys and optional Supabase or Redis URLs.
-
-Start the development server: (Uses concurrently to boot both the Next.js app on port 3000 and the Socket.IO server on port 4002 automatically)
+The repository uses concurrently to run both the Web Client (Port 3000) and Real-Time Gateway (Port 4002) concurrently:
 
 npm run dev
-Open the App: Navigate to http://localhost:3000 in your browser.
+Run Services Individually (Alternative)
 
-🤝 Contributing
-Contributions, issues, and feature requests are welcome!
-Feel free to check the issues page.
+# Terminal 1: Next.js frontend & API routes
+npm run dev:next
 
-📝 License
-This project is MIT licensed.
+# Terminal 2: Standalone Socket.IO service
+npm run server
+Verify Application Health
 
+Web Application: http://localhost:3000
+Socket Gateway: http://localhost:4002/health
+📂 Repository Topology
+Architectural-WhiteBoard/
+├── app/
+│   ├── api/
+│   │   ├── analyze/        # Security SPOF & Cost Audit endpoints
+│   │   ├── export/         # Terraform / Docker Compose compilation logic
+│   │   └── generate/       # Prompt-to-Node graph layout generation
+│   ├── components/         # Canvas UI, Sidebar, AI Modals, Node components
+│   ├── login/              # Auth views
+│   ├── signup/
+│   ├── globals.css         # Theme primitives & React Flow style overrides
+│   └── page.tsx            # Main whiteboard view entrypoint
+├── server/
+│   └── server.js           # Socket.IO WebSocket server (Port 4002)
+├── lib/                    # Shared utility primitives, DB clients, Graph layouts
+├── types/                  # TypeScript interface declarations for canvas & state
+├── public/                 # Static assets & icons
+└── README.md
+⚡ Real-Time Mechanics & Production Deployment
+Scaling WebSockets
+The WebSocket server (server/server.js) tracks rooms and canvas mutation deltas.
+For multi-instance production deployments (e.g., Kubernetes / ECS), configure the @socket.io/redis-adapter using REDIS_URL and enable sticky sessions at the Load Balancer level (e.g., AWS ALB / NGINX).
+Infrastructure Compilation Engine
+Visual canvas elements are transformed into IaC formats by mapping standard graph nodes (Compute, Database, Gateway, Queue) to corresponding Cloud Providers resource definitions via deterministic template generators.
 
----
+🧪 Quality & Type Checking
+# Typecheck TypeScript codebase
+npm run type-check
+
+# Run test suite
+npm run test
+
+# Production build test
+npm run build
+📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
